@@ -11,7 +11,7 @@ Learn how to integrate Telminator's Model Context Protocol server into your appl
 
 Telminator provides an MCP server endpoint for basic use cases:
 ```
-https://mcp.telminator.com/
+http://136.119.45.200:8888/mcp
 ```
 
 This standard MCP server provides:
@@ -41,7 +41,7 @@ The simplest way to interact with the standard MCP server is through cURL comman
 
 Discover all tools available on the server:
 ```bash
-curl -X POST 'https://mcp.telminator.com/' \
+curl -X POST 'http://136.119.45.200:8888/mcp' \
   -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 ```
@@ -75,7 +75,7 @@ curl -X POST 'https://mcp.telminator.com/' \
 
 Execute a specific tool with parameters:
 ```bash
-curl -X POST 'https://mcp.telminator.com/' \
+curl -X POST 'http://136.119.45.200:8888/mcp' \
   -H 'Content-Type: application/json' \
   -d '{
     "jsonrpc":"2.0",
@@ -130,7 +130,7 @@ import asyncio
 
 async def main():
     # Connect to the Telminator MCP server
-    async with Client("https://mcp.telminator.com/") as client:
+    async with Client("http://136.119.45.200:8888/mcp") as client:
         # List all available tools
         list_tool = await client.list_tools()
         print("Available tools:", list_tool)
@@ -176,7 +176,7 @@ import asyncio
 
 async def main():
     try:
-        async with Client("https://mcp.telminator.com/") as client:
+        async with Client("http://136.119.45.200:8888/mcp") as client:
             result = await client.call_tool(
                 name="list_a2a_mcp_server",
                 arguments={"query": "send email"}
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
 Set a custom timeout for long-running operations:
 ```python
-async with Client("https://mcp.telminator.com/", timeout=60) as client:
+async with Client("http://136.119.45.200:8888/mcp", timeout=60) as client:
     # Your code here
     pass
 ```
@@ -206,7 +206,7 @@ async with Client("https://mcp.telminator.com/", timeout=60) as client:
     
     **Solutions:**
     - Check your internet connection
-    - Verify the server URL is correct: `https://mcp.telminator.com/`
+    - Verify the server URL is correct
     - Ensure the server is running and accessible
     - Try increasing the timeout value
   </Accordion>
@@ -237,8 +237,8 @@ async with Client("https://mcp.telminator.com/", timeout=60) as client:
     More cURL examples and use cases
   </Card>
   
-  <Card title="What is MCP?" icon="book" href="/docs/mcp/what-is-mcp">
-    Learn more about the Model Context Protocol
+  <Card title="Python Integration" icon="python" href="/docs/mcp/python-client">
+    Advanced Python client patterns
   </Card>
 </CardGroup>
 
