@@ -1,0 +1,277 @@
+---
+title: Examples
+sidebarTitle: Examples
+---
+
+# Usage Examples
+
+Learn how to use the Telminator CLI with practical examples.
+
+## Connecting to a Different Agent
+
+You can connect to any agent by passing its URL with the `--agent` flag:
+
+### Basic Connection
+
+Connect to the default Telminator agent:
+```bash
+uv run . --agent http://agent.telminator.com:10002/
+```
+
+### Connect to a Custom Agent
+
+Connect to any A2A-compatible agent:
+```bash
+uv run . --agent https://sample-a2a-agent-908687846511.us-central1.run.app
+```
+
+<Note>
+The agent URL must include the protocol (`http://` or `https://`) and end with a forward slash `/`
+</Note>
+
+## Managing Multiple Agents
+
+### Add a New Agent
+
+Save an agent to your configuration for quick access:
+```bash
+uv run . --add --agent http://agent.telminator.com:10002/
+```
+
+**What happens:**
+- The agent is saved with a unique ID
+- You can switch to it later without typing the full URL
+- Authentication settings are stored securely
+
+### Example Output
+```
+Setting up: http://agent.telminator.com:10002/
+⚠️  Authentication required
+ℹ️  API key required in 'Telmini-API-Key' header
+
+Enter your Telmini-API-Key: tel*********************
+
+✓ Authentication configured
+✓ Saved as ID: 43dc55fe
+✓ Connected
+```
+
+### Switch Between Agents
+
+During a session, type `switch` to change agents:
+```bash
+You (): switch
+```
+
+The CLI will show you all saved agents and let you choose one.
+
+## Common Usage Patterns
+
+### Pattern 1: Quick Test
+
+Test an agent quickly without saving:
+```bash
+uv run . --agent http://agent.telminator.com:10002/
+```
+
+### Pattern 2: Regular Use
+
+Add your frequently-used agents:
+```bash
+# Add agent once
+uv run . --add --agent http://agent.telminator.com:10002/
+
+# Connect anytime using the saved ID
+uv run .
+```
+
+### Pattern 3: Multiple Environments
+
+Save different agents for different purposes:
+```bash
+# Production agent
+uv run . --add --agent https://prod-agent.telminator.com/
+
+# Development agent
+uv run . --add --agent http://dev-agent.telminator.com:8080/
+
+# Testing agent
+uv run . --add --agent http://localhost:10001/
+```
+
+## Example Session
+
+Here's what a typical session looks like:
+
+### Step 1: Start the CLI
+```bash
+uv run . --agent http://agent.telminator.com:10002/
+```
+
+### Step 2: Authenticate
+```
+Setting up: http://agent.telminator.com:10002/
+⚠️  Authentication required
+
+Enter your Telmini-API-Key: tel*********************
+
+✓ Connected
+```
+
+### Step 3: View Agent Info
+```
+Agent Info
+┌─────────────┬──────────────────────────────────────────┐
+│ Name        │ Currency Agent                           │
+│ About       │ Helps with exchange rates for currencies │
+│ Version     │ 1.0.0                                    │
+│ Streaming   │ ✓                                        │
+└─────────────┴──────────────────────────────────────────┘
+
+Session: 0019c38153b14ca9...
+Type 'exit' or 'quit' to leave, 'switch' to change agent
+```
+
+### Step 4: Send a Query
+```
+You (): What is the exchange rate from USD to EUR?
+```
+
+### Step 5: Get Response
+```
+Agent: The current exchange rate from USD to EUR is approximately 0.92.
+       For 100 USD, you would get about 92 EUR.
+```
+
+### Step 6: Continue or Exit
+```
+You (): Thanks!
+
+You (): quit
+```
+
+## Advanced Examples
+
+### Working with Files
+
+Attach files to your queries:
+```bash
+You (): Can you analyze this data?
+Select a file path to attach? (press enter to skip): /path/to/data.csv
+
+[Agent processes the file]
+Agent: I've analyzed your CSV file. Here are the key insights...
+```
+
+### Multi-turn Conversations
+
+The CLI maintains context across multiple messages:
+```bash
+You (): What's the USD to EUR rate?
+Agent: The current rate is 0.92 USD to EUR.
+
+You (): And for 500 USD?
+Agent: 500 USD would be approximately 460 EUR.
+
+You (): What about GBP?
+Agent: 500 USD is approximately 395 GBP.
+```
+
+## Agent URLs Quick Reference
+
+| Environment | URL | Purpose |
+|-------------|-----|---------|
+| **Production** | `https://agent.telminator.com:10001/` | Live production agents |
+| **Demo** | `http://agent.telminator.com:10002/` | Demo and testing |
+| **Local** | `http://localhost:10001/` | Local development |
+| **Custom** | Your agent URL | Self-hosted agents |
+
+## Command Reference
+
+### Connection Commands
+```bash
+# Connect to an agent
+uv run . --agent <URL>
+
+# Add and save an agent
+uv run . --add --agent <URL>
+
+# Connect to the last used agent
+uv run .
+```
+
+### Session Commands
+
+During a session, use these commands:
+
+| Command | Action |
+|---------|--------|
+| `exit` or `quit` | End the session and exit |
+| `switch` | Switch to a different saved agent |
+| `:q` | Quick exit (alternative) |
+
+## Troubleshooting Examples
+
+### Connection Refused
+```bash
+Error: Connection refused at http://agent.telminator.com:10002/
+```
+
+**Solution:** Check if the agent URL is correct and the agent is running.
+
+### Authentication Failed
+```bash
+Error: Authentication failed (401 Unauthorized)
+```
+
+**Solution:** Verify your API key is correct and hasn't expired. Get a new key from [app.telminator.com](https://app.telminator.com/#api-keys).
+
+### Invalid Agent URL
+```bash
+Error: Invalid agent URL format
+```
+
+**Solution:** Ensure the URL includes:
+- Protocol: `http://` or `https://`
+- Trailing slash: `/`
+
+Example: `https://agent.telminator.com:10001/` ✅
+
+## Tips & Best Practices
+
+<AccordionGroup>
+  <Accordion title="Save Your Frequently Used Agents">
+    Use `--add` to save agents you use regularly. This saves time and reduces typing errors.
+```bash
+    uv run . --add --agent http://agent.telminator.com:10002/
+```
+  </Accordion>
+
+  <Accordion title="Use Descriptive Names">
+    When you save agents, give them descriptive names in your notes to remember what each one does.
+  </Accordion>
+
+  <Accordion title="Test in Demo First">
+    Before using production agents, test your queries in the demo environment.
+  </Accordion>
+
+  <Accordion title="Keep API Keys Secure">
+    Never share your API keys in screenshots or logs. Store them securely in environment variables.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Troubleshooting" icon="wrench" href="/docs/cli/troubleshooting">
+    Common issues and solutions
+  </Card>
+  
+  <Card title="Python Integration" icon="python" href="/docs/a2a/python-code">
+    Build custom applications with A2A
+  </Card>
+</CardGroup>
+
+<Note>
+**Need more examples?** Check out the [GitHub repository](https://github.com/dil34556/Agent-CLI) for additional code samples and use cases.
+</Note>

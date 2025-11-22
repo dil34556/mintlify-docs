@@ -1,0 +1,307 @@
+---
+title: cURL Examples
+sidebarTitle: cURL Examples
+---
+
+# cURL Examples for Telminator MCP
+
+Learn how to interact with Telminator's MCP server using cURL commands.
+
+## Prerequisites
+
+- cURL installed on your system
+- Access to Telminator MCP server endpoint
+- Basic understanding of JSON-RPC protocol
+
+## Server Endpoint
+```
+https://mcp.telminator.com/
+```
+
+## Basic Operations
+
+### 1. List Available Tools
+
+Discover all tools available on the MCP server:
+```bash
+curl -X POST 'https://mcp.telminator.com/' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list",
+    "params": {}
+  }'
+```
+
+<Accordion title="View Response">
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "tools": [
+      {
+        "name": "list_a2a_mcp_server",
+        "description": "List available A2A MCP servers",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query for filtering servers"
+            }
+          },
+          "required": ["query"]
+        }
+      },
+      {
+        "name": "create_task",
+        "description": "Create a new task",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "description": {"type": "string"}
+          },
+          "required": ["title"]
+        }
+      }
+    ]
+  }
+}
+```
+</Accordion>
+
+### 2. Call a Tool
+
+Execute a specific tool with parameters:
+```bash
+curl -X POST 'https://mcp.telminator.com/' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "list_a2a_mcp_server",
+      "arguments": {
+        "query": "send email to John"
+      }
+    }
+  }'
+```
+
+<Accordion title="View Response">
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Found 2 servers matching your query: Email Server, Notification Server"
+      }
+    ],
+    "isError": false
+  }
+}
+```
+</Accordion>
+
+## Practical Examples
+
+### Example 1: Search for Email Servers
+```bash
+curl -X POST 'https://mcp.telminator.com/' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 10,
+    "method": "tools/call",
+    "params": {
+      "name": "list_a2a_mcp_server",
+      "arguments": {
+        "query": "email"
+      }
+    }
+  }'
+```
+
+### Example 2: Create a Task
+```bash
+curl -X POST 'https://mcp.telminator.com/' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 11,
+    "method": "tools/call",
+    "params": {
+      "name": "create_task",
+      "arguments": {
+        "title": "Send weekly report",
+        "description": "Compile and send the weekly team report"
+      }
+    }
+  }'
+```
+
+### Example 3: Search with Multiple Keywords
+```bash
+curl -X POST 'https://mcp.telminator.com/' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 12,
+    "method": "tools/call",
+    "params": {
+      "name": "list_a2a_mcp_server",
+      "arguments": {
+        "query": "calendar scheduling meeting"
+      }
+    }
+  }'
+```
+
+## JSON-RPC Protocol
+
+The Telminator MCP server uses JSON-RPC 2.0 protocol.
+
+### Request Format
+```json
+{
+  "jsonrpc": "2.0",           // Protocol version (required)
+  "id": 1,                     // Request ID (required)
+  "method": "method_name",     // Method to call (required)
+  "params": {                  // Parameters (optional)
+    "key": "value"
+  }
+}
+```
+
+### Response Format
+
+**Success Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    // Result data
+  }
+}
+```
+
+**Error Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32601,
+    "message": "Method not found"
+  }
+}
+```
+
+## Common Methods
+
+| Method | Description | Parameters |
+|--------|-------------|------------|
+| `tools/list` | List all available tools | None |
+| `tools/call` | Execute a specific tool | `name`, `arguments` |
+| `resources/list` | List available resources | None |
+| `prompts/list` | List available prompts | None |
+
+## Error Codes
+
+| Code | Meaning | Description |
+|------|---------|-------------|
+| `-32700` | Parse error | Invalid JSON was received |
+| `-32600` | Invalid request | The JSON sent is not a valid request |
+| `-32601` | Method not found | The method does not exist |
+| `-32602` | Invalid params | Invalid method parameters |
+| `-32603` | Internal error | Internal JSON-RPC error |
+
+## Tips & Best Practices
+
+<AccordionGroup>
+  <Accordion title="Pretty Print JSON Output">
+    Use `jq` to format JSON responses:
+```bash
+    curl -X POST 'https://mcp.telminator.com/' \
+      -H 'Content-Type: application/json' \
+      -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+      | jq '.'
+```
+  </Accordion>
+
+  <Accordion title="Save Response to File">
+    Save the response for later analysis:
+```bash
+    curl -X POST 'https://mcp.telminator.com/' \
+      -H 'Content-Type: application/json' \
+      -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+      -o response.json
+```
+  </Accordion>
+
+  <Accordion title="Add Timeout">
+    Set a maximum time for the request:
+```bash
+    curl --max-time 30 \
+      -X POST 'https://mcp.telminator.com/' \
+      -H 'Content-Type: application/json' \
+      -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+```
+  </Accordion>
+
+  <Accordion title="Verbose Output">
+    See detailed request/response information:
+```bash
+    curl -v \
+      -X POST 'https://mcp.telminator.com/' \
+      -H 'Content-Type: application/json' \
+      -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<Steps>
+  <Step title="Verify Server is Running">
+    Test basic connectivity:
+```bash
+    curl -I https://mcp.telminator.com/
+```
+  </Step>
+  
+  <Step title="Check JSON Syntax">
+    Validate your JSON before sending:
+```bash
+    echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.'
+```
+  </Step>
+  
+  <Step title="Review Error Messages">
+    Check the error code and message in the response for debugging
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Python Client" icon="python" href="/docs/mcp/connecting">
+    Use FastMCP for production applications
+  </Card>
+  
+  <Card title="What is MCP?" icon="book" href="/docs/mcp/what-is-mcp">
+    Learn more about the Model Context Protocol
+  </Card>
+</CardGroup>
+
+<Warning>
+**Note:** The Telminator MCP server is in active development. API endpoints and methods may change.
+</Warning>

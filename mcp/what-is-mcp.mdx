@@ -1,0 +1,78 @@
+---
+title: What is MCP?
+sidebarTitle: Introduction
+---
+
+# Model Context Protocol (MCP)
+
+MCP (Model Context Protocol) is an open-source standard for connecting AI applications to external systems.
+
+## Overview
+
+Using MCP, AI applications like Claude or ChatGPT can connect to data sources (e.g. local files, databases), tools (e.g. search engines, calculators) and workflows (e.g. specialized prompts)—enabling them to access key information and perform tasks.
+
+<Note>
+Think of MCP like a **USB-C port for AI applications**. Just as USB-C provides a standardized way to connect electronic devices, MCP provides a standardized way to connect AI applications to external systems.
+</Note>
+
+<Frame>
+  <img src="https://mintcdn.com/mcp/bEUxYpZqie0DsluH/images/mcp-simple-diagram.png?fit=max&auto=format&n=bEUxYpZqie0DsluH&q=85&s=35268aa0ad50b8c385913810e7604550" alt="MCP Architecture Diagram" />
+</Frame>
+
+## What Can MCP Enable?
+
+MCP opens up powerful possibilities for AI applications:
+
+- **Personal AI Assistants**: Agents can access your Google Calendar and Notion, acting as a more personalized AI assistant
+- **Design to Code**: Claude Code can generate an entire web app using a Figma design
+- **Enterprise Data Access**: Enterprise chatbots can connect to multiple databases across an organization, empowering users to analyze data using chat
+- **3D Manufacturing**: AI models can create 3D designs on Blender and print them out using a 3D printer
+
+## Why Does MCP Matter?
+
+Depending on where you sit in the ecosystem, MCP can have a range of benefits:
+
+<CardGroup cols={3}>
+  <Card title="Developers" icon="code">
+    MCP reduces development time and complexity when building, or integrating with, an AI application or agent
+  </Card>
+  
+  <Card title="AI Applications" icon="robot">
+    MCP provides access to an ecosystem of data sources, tools and apps which will enhance capabilities and improve the end-user experience
+  </Card>
+  
+  <Card title="End-Users" icon="users">
+    MCP results in more capable AI applications or agents which can access your data and take actions on your behalf when necessary
+  </Card>
+</CardGroup>
+
+## Telminator MCP Server
+
+Telminator provides an MCP server that enables powerful AI-driven task management and automation capabilities.
+
+### Server Endpoint
+```
+https://mcp.telminator.com/
+```
+
+This endpoint provides:
+- Tool discovery and listing
+- Tool execution capabilities
+- Task management integration
+- A2A agent connectivity
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Connect to Server" icon="plug" href="/docs/mcp/connecting">
+    Learn how to connect to the Telminator MCP server
+  </Card>
+  
+  <Card title="cURL Examples" icon="terminal" href="/docs/mcp/curl-examples">
+    Try out MCP using simple cURL commands
+  </Card>
+</CardGroup>
+
+<Warning>
+The Telminator MCP server is in active development. API endpoints may change.
+</Warning>

@@ -1,0 +1,263 @@
+---
+title: Streaming Responses
+sidebarTitle: Streaming
+---
+
+# Streaming with A2A
+
+Enable real-time streaming responses from Telminator agents for better user experience.
+
+## Why Use Streaming?
+
+Streaming provides several benefits:
+
+- **Real-time feedback:** See responses as they're generated
+- **Better UX:** Users don't wait for complete responses
+- **Progress indication:** Track long-running agent tasks
+- **Lower latency:** Start processing responses immediately
+
+## Check Streaming Support
+
+First, verify if the agent supports streaming:
+```python
+async def check_streaming_support(client: A2AClient):
+    card = await resolver.get_agent_card()
+    
+    if card.capabilities.streaming:
+        print("✓ Streaming is supported")
+        return True
+    else:
+        print("✗ Streaming not available")
+        return False
+```
+
+## Implementing Streaming
+
+### Basic Streaming Example
+```python
+from a2a.types import (
+    SendStreamingMessageRequest, MessageSendParams,
+    Message, TextPart, TaskStatusUpdateEvent
+)
+
+async def send_streaming_message(
+    client: A2AClient,
+    prompt: str,
+    context_id: str
+):
+    # Create message
+    message = Message(
+        role="user",
+        parts=[TextPart(text=prompt)],
+        message_id=str(uuid4()),
+        context_id=context_id
+    )
+    
+    # Configure streaming request
+    payload = MessageSendParams(
+        id=str(uuid4()),
+        message=message,
+        configuration=MessageSendConfiguration(
+            accepted_output_modes=["text"]
+        )
+    )
+    
+    # Send streaming request
+    request = SendStreamingMessageRequest(
+        id=str(uuid4()),
+        params=payload
+    )
+    
+    response_stream = client.send_message_streaming(request)
+    
+    # Process stream events
+    async for result in response_stream:
+        if isinstance(result.root, JSONRPCErrorResponse):
+            print(f"Error: {result.root.error}")
+            break
+            
+        event = result.root.result
+        
+        # Handle different event types
+        if isinstance(event, Message):
+            print(f"Message: {event.model_dump_json(exclude_none=True)}")
+        elif isinstance(event, TaskStatusUpdateEvent):
+            print(f"Status: {event.status.state}")
+```
+
+### Advanced Streaming with Event Handling
+```python
+from a2a.types import Task, TaskStatusUpdateEvent, Message
+
+async def stream_with_events(
+    client: A2AClient,
+    prompt: str,
+    context_id: str
+):
+    message = Message(
+        role="user",
+        parts=[TextPart(text=prompt)],
+        message_id=str(uuid4()),
+        context_id=context_id
+    )
+    
+    payload = MessageSendParams(
+        id=str(uuid4()),
+        message=message,
+        configuration=MessageSendConfiguration(
+            accepted_output_modes=["text"]
+        )
+    )
+    
+    request = SendStreamingMessageRequest(
+        id=str(uuid4()),
+        params=payload
+    )
+    
+    task_id = None
+    task_completed = False
+    
+    response_stream = client.send_message_streaming(request)
+    
+    async for result in response_stream:
+        if isinstance(result.root, JSONRPCErrorResponse):
+            print(f"Error: {result.root.error}")
+            return None, False
+            
+        event = result.root.result
+        
+        # Track task ID
+        if isinstance(event, Task):
+            task_id = event.id
+            print(f"Task created: {task_id}")
+        
+        # Track task status
+        elif isinstance(event, TaskStatusUpdateEvent):
+            print(f"Status update: {event.status.state}")
+            if event.status.state == "completed":
+                task_completed = True
+        
+        # Handle messages
+        elif isinstance(event, Message):
+            # Process message content
+            for part in event.parts:
+                if hasattr(part, 'text'):
+                    print(part.text, end='', flush=True)
+    
+    return task_id, task_completed
+```
+
+## Handling Stream Events
+
+Different event types you'll encounter:
+
+### Task Events
+```python
+if isinstance(event, Task):
+    task_id = event.id
+    print(f"New task: {task_id}")
+```
+
+### Status Updates
+```python
+if isinstance(event, TaskStatusUpdateEvent):
+    status = event.status.state
+    if status == "in_progress":
+        print("Agent is working...")
+    elif status == "completed":
+        print("Task completed!")
+    elif status == "failed":
+        print("Task failed")
+```
+
+### Message Events
+```python
+if isinstance(event, Message):
+    # Extract text from message parts
+    for part in event.parts:
+        if isinstance(part.root, TextPart):
+            print(part.root.text)
+```
+
+## Error Handling in Streams
+```python
+from a2a.types import JSONRPCErrorResponse
+
+async def safe_streaming(client: A2AClient, prompt: str, context_id: str):
+    try:
+        response_stream = client.send_message_streaming(request)
+        
+        async for result in response_stream:
+            if isinstance(result.root, JSONRPCErrorResponse):
+                error = result.root.error
+                print(f"Stream error: {error.message}")
+                print(f"Error code: {error.code}")
+                break
+                
+            # Process events...
+            
+    except asyncio.TimeoutError:
+        print("Stream timeout - connection lost")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+```
+
+## Complete Streaming Example
+```python
+import asyncio
+from uuid import uuid4
+import httpx
+from a2a.client import A2ACardResolver, A2AClient
+from a2a.types import *
+
+async def main():
+    AGENT_URL = os.getenv("AGENT_URL", "https://agent.telminator.com:10001/")
+    BEARER_TOKEN = os.getenv("A2A_BEARER_TOKEN")
+    
+    headers = {
+        "Telmini-API-Key": BEARER_TOKEN,
+        "Authorization": f"Bearer {BEARER_TOKEN}",
+    }
+    
+    async with httpx.AsyncClient(timeout=30, headers=headers) as http_client:
+        resolver = A2ACardResolver(
+            http_client,
+            AGENT_URL,
+            agent_card_path="/.well-known/agent.json"
+        )
+        
+        card = await resolver.get_agent_card()
+        client = A2AClient(http_client, agent_card=card)
+        
+        if not card.capabilities.streaming:
+            print("Streaming not supported by this agent")
+            return
+        
+        context_id = uuid4().hex
+        
+        # Send streaming message
+        print("Sending message...")
+        task_id, completed = await stream_with_events(
+            client,
+            "What can you help me with?",
+            context_id
+        )
+        
+        print(f"\nTask ID: {task_id}")
+        print(f"Completed: {completed}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Best Practices
+
+- **Always check streaming support** before attempting to stream
+- **Handle all event types** to avoid missing important information
+- **Implement timeout handling** for long-running streams
+- **Process events incrementally** for better user experience
+- **Log errors properly** for debugging stream issues
+
+<Note>
+Streaming uses Server-Sent Events (SSE) under the hood, so ensure your network allows SSE connections.
+</Note>

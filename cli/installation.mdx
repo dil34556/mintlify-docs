@@ -1,0 +1,60 @@
+---
+title: Installation
+sidebarTitle: Installation
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+
+- Python 3.12 or higher
+- [UV package manager](https://docs.astral.sh/uv/)
+- A running A2A server
+
+## Installation
+
+### Step 1: Install UV Package Manager (skip if already installed)
+
+UV is a fast Python package installer and resolver. Choose your operating system below:
+
+<Tabs>
+<Tab title="Windows">
+<CodeBlock language="powershell">
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+</CodeBlock>
+</Tab>
+<Tab title="macOS">
+<CodeBlock language="bash">
+curl -LsSf https://astral.sh/uv/install.sh | sh
+</CodeBlock>
+</Tab>
+<Tab title="Linux">
+<CodeBlock language="bash">
+curl -LsSf https://astral.sh/uv/install.sh | sh
+</CodeBlock>
+</Tab>
+</Tabs>
+
+### Step 2: Clone the Repository
+
+<CodeBlock language="bash">
+git clone https://github.com/dil34556/Agent-CLI.git
+</CodeBlock>
+
+### Step 3: Navigate to the CLI Directory
+
+<CodeBlock language="bash">
+cd Agent-CLI/cli
+</CodeBlock>
+
+### Step 4: Launch the CLI
+
+Run the following command to start the CLI for the first time:
+
+<CodeBlock language="bash">
+uv run .
+</CodeBlock>
+
+<Note type="warning">
+**First Time Setup:** The CLI will automatically install dependencies (44 packages) on first run. This may take a moment.
+</Note>

@@ -1,0 +1,247 @@
+---
+title: Connecting to MCP Server
+sidebarTitle: Connect
+---
+
+# Connect to Telminator MCP Server
+
+Learn how to integrate Telminator's Model Context Protocol server into your applications.
+
+## Server Endpoint
+
+Telminator provides an MCP server endpoint for basic use cases:
+```
+https://mcp.telminator.com/
+```
+
+This standard MCP server provides:
+- Basic tool listing and discovery
+- Tool execution capabilities
+- Task management integration
+
+## Connection Methods
+
+You can connect to the Telminator MCP server using multiple methods:
+
+<CardGroup cols={2}>
+  <Card title="cURL" icon="terminal" href="#using-curl">
+    Quick testing and debugging with command-line tools
+  </Card>
+  
+  <Card title="Python (FastMCP)" icon="python" href="#using-python">
+    Full-featured client for production applications
+  </Card>
+</CardGroup>
+
+## Using cURL
+
+The simplest way to interact with the standard MCP server is through cURL commands.
+
+### List Available Tools
+
+Discover all tools available on the server:
+```bash
+curl -X POST 'https://mcp.telminator.com/' \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+```
+
+**Expected Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "tools": [
+      {
+        "name": "list_a2a_mcp_server",
+        "description": "List available A2A MCP servers",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+### Call a Tool
+
+Execute a specific tool with parameters:
+```bash
+curl -X POST 'https://mcp.telminator.com/' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "jsonrpc":"2.0",
+    "id":3,
+    "method":"tools/call",
+    "params":{
+      "name":"list_a2a_mcp_server",
+      "arguments":{"query":"send email to John"}
+    }
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Found 2 servers matching your query..."
+      }
+    ]
+  }
+}
+```
+
+## Using Python (FastMCP)
+
+FastMCP provides a simple Python client for interacting with the MCP server.
+
+### Installation
+
+Install the FastMCP library:
+
+<CodeGroup>
+```bash macOS/Linux
+pip install fastmcp
+```
+```bash Windows
+pip install fastmcp
+```
+</CodeGroup>
+
+### Implementation
+
+Create a file called `telminator_client.py`:
+```python
+from fastmcp import Client
+import asyncio
+
+async def main():
+    # Connect to the Telminator MCP server
+    async with Client("https://mcp.telminator.com/") as client:
+        # List all available tools
+        list_tool = await client.list_tools()
+        print("Available tools:", list_tool)
+    
+        # Call a specific tool
+        result = await client.call_tool(
+            name="list_a2a_mcp_server",
+            arguments={"query": "need to send a mail to Ram"}
+        )
+        print(f"Result: {result.content[0].text}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### How to Run
+
+Execute your Python script:
+
+<CodeGroup>
+```bash macOS/Linux
+python telminator_client.py
+```
+```bash Windows
+python telminator_client.py
+```
+</CodeGroup>
+
+**Expected Output:**
+```
+Available tools: [Tool(name='list_a2a_mcp_server', description='List available A2A MCP servers', ...)]
+Result: Found 2 servers matching your query...
+```
+
+## Advanced Usage
+
+### Error Handling
+
+Always implement proper error handling:
+```python
+from fastmcp import Client
+import asyncio
+
+async def main():
+    try:
+        async with Client("https://mcp.telminator.com/") as client:
+            result = await client.call_tool(
+                name="list_a2a_mcp_server",
+                arguments={"query": "send email"}
+            )
+            print(f"Success: {result.content[0].text}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Custom Timeout
+
+Set a custom timeout for long-running operations:
+```python
+async with Client("https://mcp.telminator.com/", timeout=60) as client:
+    # Your code here
+    pass
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection Timeout">
+    **Issue:** Request times out when connecting to the server.
+    
+    **Solutions:**
+    - Check your internet connection
+    - Verify the server URL is correct: `https://mcp.telminator.com/`
+    - Ensure the server is running and accessible
+    - Try increasing the timeout value
+  </Accordion>
+
+  <Accordion title="Tool Not Found">
+    **Issue:** Error when calling a tool that doesn't exist.
+    
+    **Solutions:**
+    - List available tools first using `tools/list`
+    - Verify the tool name is spelled correctly
+    - Check if the tool requires authentication
+  </Accordion>
+
+  <Accordion title="Invalid Arguments">
+    **Issue:** Tool call fails with invalid argument error.
+    
+    **Solutions:**
+    - Check the tool's input schema
+    - Ensure all required arguments are provided
+    - Verify argument types match the schema
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="cURL Examples" icon="terminal" href="/docs/mcp/curl-examples">
+    More cURL examples and use cases
+  </Card>
+  
+  <Card title="What is MCP?" icon="book" href="/docs/mcp/what-is-mcp">
+    Learn more about the Model Context Protocol
+  </Card>
+</CardGroup>
+
+<Warning>
+**Note:** The Telminator MCP server is in active development. API endpoints may change.
+</Warning>

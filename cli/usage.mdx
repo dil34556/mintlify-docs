@@ -1,0 +1,84 @@
+---
+title: Usage
+sidebarTitle: Usage
+---
+
+## First Run Setup
+
+### What Happens Next
+
+When you run the CLI for the first time, you'll see a setup wizard:
+
+### 1. Enter Agent URL
+The CLI will prompt you for the agent URL. This should be the base URL where your A2A agent is running.
+
+<CodeBlock language="text">
+Agent URL: http://agent.telminator.com:10001/
+</CodeBlock>
+
+The URL format should include the protocol (`http://` or `https://`) and end with a forward slash.
+
+## Authentication
+
+### 2. Configure Authentication
+If your agent requires authentication, the CLI will detect this and prompt you for an API key:
+
+<CodeBlock language="text">
+Setting up: http://agent.telminator.com:10001/
+⚠️ Authentication required
+
+ℹ️ API key required in 'Telmini-API-Key' header
+
+Enter your Telmini-API-Key:
+</CodeBlock>
+
+<Note>
+**Getting Your API Key:** If you're using Telminator agents, you can generate an API key in the [Access Tokens page](https://app.telminator.com/#api-keys). Simply create a new key, copy it, and paste it when prompted.
+</Note>
+
+<Note type="success">
+**Success Indicators:** After successful setup, you'll see:
+
+<CodeBlock language="text">
+✓ Authentication configured
+✓ Saved as ID: 43dc55fe
+✓ Connected
+</CodeBlock>
+</Note>
+
+## Using the CLI
+
+### Starting a Chat Session
+
+After connection, the CLI will ask if you want to start chatting:
+
+<CodeBlock language="text">
+Chat now? [y/n] (y):
+</CodeBlock>
+
+Type `y` and press Enter to begin. You'll see the agent information:
+
+<CodeBlock language="text">
+Agent Info
+┌─────────────┬──────────────────────────────────────────┐
+│ Name        │ Currency Agent                           │
+│ About       │ Helps with exchange rates for currencies │
+│ Version     │ 1.0.0                                    │
+│ Streaming   │ ✓                                        │
+└─────────────┴──────────────────────────────────────────┘
+
+Session: 0019c38153b14ca9...
+Type 'exit' or 'quit' to leave, 'switch' to change agent
+
+You ():
+</CodeBlock>
+
+### Sending Messages
+
+Simply type your message and press Enter:
+
+<CodeBlock language="text">
+You (): What is the exchange rate from USD to EUR?
+</CodeBlock>
+
+The agent will respond, and you can continue the conversation. The CLI supports full streaming, so you'll see responses as they're generated.

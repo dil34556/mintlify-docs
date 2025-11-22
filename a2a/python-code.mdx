@@ -1,0 +1,435 @@
+---
+title: Python Integration Guide
+sidebarTitle: Getting Started
+---
+
+# A2A Python Integration
+
+Learn how to integrate with Telminator agents using Python. No complex installations required - just create a file and run it!
+
+## Prerequisites
+
+- Python 3.12 or higher
+- A Telminator account at [app.telminator.com](https://app.telminator.com/)
+- Your API key from the [Access Tokens page](https://app.telminator.com/#api-keys)
+
+<Note>
+The A2A client libraries are already available in your Python environment. You don't need to install anything extra!
+</Note>
+
+## Quick Start
+
+### Step 1: Get Your API Key
+
+1. Go to [Telminator Dashboard](https://app.telminator.com/)
+2. Navigate to **Access Tokens** section
+3. Click **"Create New Token"**
+4. Copy your API key (it looks like: `tel*********************`)
+
+### Step 2: Create Your Python File
+
+Create a new file called `agent_client.py` and paste the complete code below:
+```python
+import asyncio
+import base64
+import os
+from uuid import uuid4
+import httpx
+from a2a.client import A2ACardResolver, A2AClient
+from a2a.extensions.common import HTTP_EXTENSION_HEADER
+from a2a.types import (
+    FilePart, FileWithBytes, GetTaskRequest, JSONRPCErrorResponse, Message,
+    MessageSendConfiguration, MessageSendParams, Part, SendMessageRequest,
+    SendStreamingMessageRequest, Task, TaskStatusUpdateEvent, TaskQueryParams, TextPart,
+)
+
+async def completeTask(client: A2AClient, streaming: bool, task_id: str | None, context_id: str):
+    """
+    Handle a single task interaction with the agent
+    """
+    prompt = input("\nWhat do you want to send to the agent? (:q or quit to exit) ").strip()
+    
+    if prompt in (":q", "quit"):
+        return False, None, None
+    
+    # Create message with text
+    parts = [TextPart(text=prompt)]
+    
+    # Optional: Attach a file
+    file_path = input("Select a file path to attach? (press enter to skip): ").strip()
+    if file_path:
+        if os.path.exists(file_path):
+            with open(file_path, "rb") as f:
+                file_content = base64.b64encode(f.read()).decode("utf-8")
+                parts.append(
+                    Part(root=FilePart(
+                        file=FileWithBytes(
+                            name=os.path.basename(file_path),
+                            bytes=file_content
+                        )
+                    ))
+                )
+        else:
+            print(f"Warning: File not found at {file_path}, skipping attachment.")
+    
+    # Create the message
+    message = Message(
+        role="user",
+        parts=parts,
+        message_id=str(uuid4()),
+        task_id=task_id,
+        context_id=context_id
+    )
+    
+    payload = MessageSendParams(
+        id=str(uuid4()),
+        message=message,
+        configuration=MessageSendConfiguration(accepted_output_modes=["text"])
+    )
+    
+    current_task_id, current_context_id, task_completed = task_id, context_id, False
+    
+    # Handle streaming vs non-streaming
+    if streaming:
+        response_stream = client.send_message_streaming(
+            SendStreamingMessageRequest(id=str(uuid4()), params=payload)
+        )
+        
+        async for result in response_stream:
+            if isinstance(result.root, JSONRPCErrorResponse):
+                print(f"Error: {result.root.error}")
+                return False, current_context_id, current_task_id
+            
+            event = result.root.result
+            current_context_id = event.context_id or current_context_id
+            
+            if isinstance(event, Task):
+                current_task_id = event.id
+            elif hasattr(event, "task_id"):
+                current_task_id = event.task_id
+            
+            if isinstance(event, TaskStatusUpdateEvent) and event.status.state == "completed":
+                task_completed = True
+            elif isinstance(event, Message):
+                print(f"\n{event.model_dump_json(exclude_none=True)}")
+            
+            print(f"stream event => {event.model_dump_json(exclude_none=True)}")
+        
+        # Check task completion status
+        if current_task_id and not task_completed:
+            task_resp = await client.get_task(
+                GetTaskRequest(id=str(uuid4()), params=TaskQueryParams(id=current_task_id))
+            )
+            if not isinstance(task_resp.root, JSONRPCErrorResponse):
+                print(f"\n{task_resp.root.result.model_dump_json(exclude_none=True)}")
+        
+        event = None
+    else:
+        # Non-streaming mode
+        resp = await client.send_message(
+            SendMessageRequest(id=str(uuid4()), params=payload)
+        )
+        
+        if isinstance(resp.root, JSONRPCErrorResponse):
+            print(f"Error: {resp.root.error}")
+            return False, current_context_id, current_task_id
+        
+        event = resp.root.result
+        current_context_id = event.context_id or current_context_id
+        
+        if isinstance(event, Task):
+            current_task_id = event.id
+        
+        print(f"\n{event.model_dump_json(exclude_none=True)}")
+    
+    # Check if input is required (continue conversation)
+    is_input_required = task_completed is False and (
+        (event and "input_required" in str(event)) or
+        (streaming and current_task_id and not task_completed)
+    )
+    
+    if is_input_required:
+        return await completeTask(client, streaming, current_task_id, current_context_id)
+    
+    return True, current_context_id, current_task_id
+
+
+async def main(url: str, bearer_token: str, session: int = 0, history: bool = False, 
+               extra_headers: dict | None = None, enabled_extensions: str = ""):
+    """
+    Main function to connect and interact with the agent
+    """
+    headers = extra_headers or {}
+    
+    # Setup authentication headers
+    headers.update({
+        "Telmini-API-Key": bearer_token,
+        "Authorization": f"Bearer {bearer_token}",
+    })
+    
+    if enabled_extensions:
+        headers[HTTP_EXTENSION_HEADER] = ", ".join(
+            e.strip() for e in enabled_extensions.split(",") if e.strip()
+        )
+    
+    print(f"Using headers: {headers}")
+    
+    async with httpx.AsyncClient(timeout=30, headers=headers) as http_client:
+        # Get agent card
+        resolver = A2ACardResolver(
+            http_client,
+            url,
+            agent_card_path="/.well-known/agent.json"
+        )
+        card = await resolver.get_agent_card()
+        
+        # Fix local URLs for remote access
+        if "0.0.0.0" in card.url or "127.0.0.1" in card.url:
+            print(f"WARN: Agent card advertises local URL '{card.url}'. Patching to '{url}' for remote access.")
+            card.url = url
+        
+        print("======= Agent Card ========")
+        print(card.model_dump_json(exclude_none=True))
+        
+        # Create A2A client
+        client = A2AClient(http_client, agent_card=card)
+        streaming = card.capabilities.streaming
+        
+        context_id = str(session) if session > 0 else uuid4().hex
+        task_id = None
+        
+        # Main interaction loop
+        while True:
+            print("========= starting a new task ========")
+            cont, context_id, task_id = await completeTask(
+                client, streaming, task_id, context_id
+            )
+            
+            if not cont:
+                break
+            
+            # Optionally show history
+            if history and task_id:
+                print("========= history ========")
+                resp = await client.get_task(
+                    GetTaskRequest(
+                        id=str(uuid4()),
+                        params=TaskQueryParams(id=task_id, historyLength=10)
+                    )
+                )
+                print(resp.model_dump_json(include={"result": {"history": True}}))
+
+
+if __name__ == "__main__":
+    # Configuration
+    AGENT_URL = os.getenv("AGENT_URL", "https://agent.telminator.com:10001/")
+    BEARER_TOKEN = os.getenv("A2A_BEARER_TOKEN")
+    
+    if not BEARER_TOKEN:
+        print("FATAL: BEARER_TOKEN not found.")
+        print("Please set the A2A_BEARER_TOKEN environment variable to continue.")
+        print("\nExample:")
+        print("  export A2A_BEARER_TOKEN='your_token_here'  # Linux/Mac")
+        print("  set A2A_BEARER_TOKEN=your_token_here       # Windows")
+        exit(1)
+    
+    # Run the client
+    asyncio.run(main(url=AGENT_URL, bearer_token=BEARER_TOKEN))
+```
+
+### Step 3: Set Your API Key
+
+**On Windows:**
+```bash
+set A2A_BEARER_TOKEN=your_api_key_here
+```
+
+**On Linux/Mac:**
+```bash
+export A2A_BEARER_TOKEN=your_api_key_here
+```
+
+### Step 4: Run the Script
+```bash
+python agent_client.py
+```
+
+## Expected Output
+
+When you run the script, you'll see output like this:
+```
+Using headers: {'Telmini-API-Key': 'tel*********************', 'Authorization': 'Bearer tel*********************'}
+WARN: Agent card advertises local URL 'http://0.0.0.0:10002/'. Patching to 'https://agent.telminator.com:10001/' for remote access.
+======= Agent Card ========
+{
+  "capabilities": {
+    "pushNotifications": true,
+    "streaming": true
+  },
+  "defaultInputModes": ["text", "text/plain"],
+  "defaultOutputModes": ["text", "text/plain"],
+  "description": "Helps with exchange rates for currencies",
+  "name": "Currency Agent",
+  "preferredTransport": "JSONRPC",
+  "protocolVersion": "0.3.0",
+  "security": [{"apiKey": []}],
+  "securitySchemes": {
+    "apiKey": {
+      "description": "API key required in 'Telmini-API-Key' header",
+      "in": "header",
+      "name": "Telmini-API-Key",
+      "type": "apiKey"
+    }
+  },
+  "skills": [
+    {
+      "description": "Helps with exchange values between various currencies",
+      "examples": ["What is exchange rate between USD and GBP?"],
+      "id": "convert_currency",
+      "name": "Currency Exchange Rates Tool",
+      "tags": ["currency conversion", "currency exchange"]
+    }
+  ],
+  "url": "https://agent.telminator.com:10001/",
+  "version": "1.0.0"
+}
+========= starting a new task ========
+
+What do you want to send to the agent? (:q or quit to exit)
+```
+
+## Understanding the Output
+
+<Steps>
+  <Step title="Connection Headers">
+    Shows your authentication headers being used to connect
+  </Step>
+  
+  <Step title="Agent Card">
+    Displays the agent's capabilities, including:
+    - **Name**: Currency Agent
+    - **Streaming**: Enabled
+    - **Skills**: Currency conversion
+    - **Protocol**: JSONRPC
+  </Step>
+  
+  <Step title="Interactive Prompt">
+    You can now send messages to the agent and receive responses in real-time
+  </Step>
+</Steps>
+
+## Example Interaction
+```
+What do you want to send to the agent? (:q or quit to exit) What is the exchange rate from USD to EUR?
+Select a file path to attach? (press enter to skip): 
+
+stream event => {"task_id": "abc123", "status": {"state": "in_progress"}}
+stream event => {"role": "assistant", "parts": [{"text": "The current exchange rate from USD to EUR is approximately 0.92..."}]}
+stream event => {"task_id": "abc123", "status": {"state": "completed"}}
+
+========= starting a new task ========
+
+What do you want to send to the agent? (:q or quit to exit) :q
+```
+
+## Key Features
+
+### 1. Streaming Support
+The client automatically detects if the agent supports streaming and uses it for real-time responses.
+
+### 2. File Attachments
+You can attach files to your messages by providing a file path when prompted.
+
+### 3. Conversation Context
+The client maintains conversation context, allowing multi-turn interactions with the agent.
+
+### 4. Task History
+Enable history tracking by modifying the `main()` call:
+```python
+asyncio.run(main(url=AGENT_URL, bearer_token=BEARER_TOKEN, history=True))
+```
+
+## Configuration Options
+
+You can customize the client behavior by modifying these parameters in the `main()` function:
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `url` | string | Agent URL | `https://agent.telminator.com:10001/` |
+| `bearer_token` | string | Your API key | From environment |
+| `session` | int | Session ID for context | `0` (auto-generate) |
+| `history` | bool | Show task history | `False` |
+| `enabled_extensions` | string | Comma-separated extensions | `""` |
+
+## Advanced Usage
+
+### Using a Different Agent
+
+Change the `AGENT_URL` to connect to a different agent:
+```python
+AGENT_URL = "https://your-custom-agent.telminator.com/"
+```
+
+### Setting Up Multiple Agents
+
+Create a configuration file:
+```python
+# agents_config.py
+AGENTS = {
+    "currency": "https://agent.telminator.com:10001/",
+    "weather": "https://weather-agent.telminator.com/",
+    "custom": "https://your-agent.telminator.com/"
+}
+
+# Use in your script
+selected_agent = AGENTS["currency"]
+asyncio.run(main(url=selected_agent, bearer_token=BEARER_TOKEN))
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Error: BEARER_TOKEN not found">
+    Make sure you've set the environment variable:
+```bash
+    # Windows
+    set A2A_BEARER_TOKEN=your_token
+
+    # Linux/Mac
+    export A2A_BEARER_TOKEN=your_token
+```
+  </Accordion>
+
+  <Accordion title="Connection timeout">
+    Check if:
+    - Your internet connection is working
+    - The agent URL is correct
+    - Your API key is valid
+  </Accordion>
+
+  <Accordion title="Authentication failed">
+    - Verify your API key is correct
+    - Check if the key has expired
+    - Generate a new key from [app.telminator.com](https://app.telminator.com/#api-keys)
+  </Accordion>
+
+  <Accordion title="DeprecationWarning: A2AClient">
+    This warning is informational. The code will continue to work. Future versions may use `ClientFactory` instead.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/docs/a2a/authentication">
+    Learn about different authentication methods
+  </Card>
+  
+  <Card title="Streaming" icon="signal-stream" href="/docs/a2a/streaming">
+    Understand real-time streaming responses
+  </Card>
+</CardGroup>
+
+<Note>
+**Need Help?** Visit the [Telminator Dashboard](https://app.telminator.com/) or check our GitHub repository for examples and support.
+</Note>

@@ -1,0 +1,156 @@
+---
+title: Authentication
+sidebarTitle: Authentication
+---
+
+# A2A Authentication
+
+Learn how to authenticate your requests to Telminator agents using the A2A protocol.
+
+## Authentication Methods
+
+Telminator supports two authentication methods:
+
+### 1. Bearer Token Authentication
+
+The most common method using the `Authorization` header:
+```python
+headers = {
+    "Authorization": f"Bearer {your_api_token}"
+}
+```
+
+### 2. API Key Header
+
+Using the custom `Telmini-API-Key` header:
+```python
+headers = {
+    "Telmini-API-Key": your_api_token
+}
+```
+
+<Note>
+**Recommended Approach:** Use both headers for maximum compatibility:
+```python
+headers = {
+    "Telmini-API-Key": BEARER_TOKEN,
+    "Authorization": f"Bearer {BEARER_TOKEN}",
+}
+```
+</Note>
+
+## Environment Variables
+
+Always store your credentials securely using environment variables:
+
+### Using Python's `os` module
+```python
+import os
+
+BEARER_TOKEN = os.getenv("A2A_BEARER_TOKEN")
+
+if not BEARER_TOKEN:
+    raise ValueError("A2A_BEARER_TOKEN environment variable is required")
+```
+
+### Using `python-dotenv`
+
+Install the package:
+```bash
+pip install python-dotenv
+```
+
+Create a `.env` file:
+```bash
+A2A_BEARER_TOKEN=your_token_here
+AGENT_URL=https://agent.telminator.com:10001/
+```
+
+Load in your code:
+```python
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+BEARER_TOKEN = os.getenv("A2A_BEARER_TOKEN")
+AGENT_URL = os.getenv("AGENT_URL")
+```
+
+## Complete Authentication Example
+```python
+import os
+import httpx
+from a2a.client import A2ACardResolver, A2AClient
+
+async def authenticate_client(agent_url: str):
+    # Get token from environment
+    bearer_token = os.getenv("A2A_BEARER_TOKEN")
+    
+    if not bearer_token:
+        raise ValueError(
+            "Authentication token not found. "
+            "Please set A2A_BEARER_TOKEN environment variable."
+        )
+    
+    # Setup headers
+    headers = {
+        "Telmini-API-Key": bearer_token,
+        "Authorization": f"Bearer {bearer_token}",
+    }
+    
+    # Create authenticated client
+    async with httpx.AsyncClient(timeout=30, headers=headers) as http_client:
+        resolver = A2ACardResolver(
+            http_client,
+            agent_url,
+            agent_card_path="/.well-known/agent.json"
+        )
+        
+        # Verify authentication by getting agent card
+        try:
+            card = await resolver.get_agent_card()
+            print("✓ Authentication successful")
+            print(f"Connected to: {card.name}")
+            
+            return A2AClient(http_client, agent_card=card)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:
+                print("✗ Authentication failed: Invalid API key")
+            else:
+                print(f"✗ Error: {e}")
+            raise
+```
+
+## Error Handling
+
+Handle authentication errors gracefully:
+```python
+from httpx import HTTPStatusError
+
+try:
+    client = await authenticate_client(AGENT_URL)
+except HTTPStatusError as e:
+    if e.response.status_code == 401:
+        print("Invalid API key. Please check your credentials.")
+    elif e.response.status_code == 403:
+        print("Access forbidden. Check your permissions.")
+    else:
+        print(f"HTTP error occurred: {e}")
+except Exception as e:
+    print(f"Authentication error: {e}")
+```
+
+## Security Best Practices
+
+<Warning>
+**Never hardcode tokens:** Always use environment variables or secure vaults
+</Warning>
+
+- ✅ Store tokens in environment variables
+- ✅ Use `.gitignore` to exclude `.env` files
+- ✅ Rotate API keys regularly
+- ✅ Use different keys for development and production
+- ❌ Never commit tokens to version control
+- ❌ Don't share tokens in logs or error messages
+- ❌ Avoid hardcoding tokens in source code
