@@ -5,7 +5,7 @@ sidebarTitle: cURL Examples
 
 # cURL Examples for Telminator MCP
 
-Learn how to interact with Telminator's MCP server using cURL commands.
+Learn how to interact with Telminator's MCP server using cURL commands with practical examples.
 
 ## Prerequisites
 
@@ -26,6 +26,7 @@ Discover all tools available on the MCP server:
 ```bash
 curl -X POST 'http://mcp.telminator.com:8888/mcp' \
   -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
   -d '{
     "jsonrpc": "2.0",
     "id": 2,
@@ -36,35 +37,32 @@ curl -X POST 'http://mcp.telminator.com:8888/mcp' \
 
 <Accordion title="View Response">
 ```json
-{
-  "jsonrpc": "2.0",
-  "id": 2,
-  "result": {
-    "tools": [
+event: message 
+data: {
+  "jsonrpc":"2.0",
+  "id":2,
+  "result":{
+    "tools":[
       {
-        "name": "list_a2a_mcp_server",
-        "description": "List available A2A MCP servers",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "query": {
-              "type": "string",
-              "description": "Search query for filtering servers"
+        "name":"list_a2a_mcp_server",
+        "description":"Searches for an agent and MCP server configurations based on any user input query.\nReturns the selected agent's details and relevant server URLs with their configurations.",
+        "inputSchema":{
+          "properties":{
+            "query":{
+              "type":"string"
             }
           },
-          "required": ["query"]
-        }
-      },
-      {
-        "name": "create_task",
-        "description": "Create a new task",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "title": {"type": "string"},
-            "description": {"type": "string"}
-          },
-          "required": ["title"]
+          "required":["query"],
+          "type":"object"
+        },
+        "outputSchema":{
+          "additionalProperties":true,
+          "type":"object"
+        },
+        "_meta":{
+          "_fastmcp":{
+            "tags":[]
+          }
         }
       }
     ]
@@ -79,6 +77,7 @@ Execute a specific tool with parameters:
 ```bash
 curl -X POST 'http://mcp.telminator.com:8888/mcp' \
   -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
   -d '{
     "jsonrpc": "2.0",
     "id": 3,
@@ -86,7 +85,7 @@ curl -X POST 'http://mcp.telminator.com:8888/mcp' \
     "params": {
       "name": "list_a2a_mcp_server",
       "arguments": {
-        "query": "send email to John"
+        "query": "test"
       }
     }
   }'
@@ -94,18 +93,35 @@ curl -X POST 'http://mcp.telminator.com:8888/mcp' \
 
 <Accordion title="View Response">
 ```json
-{
-  "jsonrpc": "2.0",
-  "id": 3,
-  "result": {
-    "content": [
+event: message 
+data: {
+  "jsonrpc":"2.0",
+  "id":3,
+  "result":{
+    "content":[
       {
-        "type": "text",
-        "text": "Found 2 servers matching your query: Email Server, Notification Server"
+        "type":"text",
+        "text":"{\"a2a_result\":null,\"search_result\":{\"urls\":[\"https://github.com/designcomputer/mysql_mcp_server\"],\"server_configs\":[{\"name\":\"MySQL MCP Server\",\"url\":\"https://github.com/designcomputer/mysql_mcp_server\",\"description\":\"MCP protocol server for MySQL, supporting table discovery, data reading, and safe SQL execution\",\"server_config\":\"{\\\"mcpServers\\\": {\\\"mysql\\\": {\\\"command\\\": \\\"uv\\\", \\\"args\\\": [\\\"--directory\\\", \\\"path/to/mysql_mcp_server\\\", \\\"run\\\", \\\"mysql_mcp_server\\\"], \\\"env\\\": {\\\"MYSQL_HOST\\\": \\\"localhost\\\", \\\"MYSQL_PORT\\\": \\\"3306\\\", \\\"MYSQL_USER\\\": \\\"your_username\\\", \\\"MYSQL_PASSWORD\\\": \\\"your_password\\\", \\\"MYSQL_DATABASE\\\": \\\"your_database\\\"}}}}\"}]}}"
       }
     ],
-    "isError": false
-  }
+    "structuredContent":{
+      "a2a_result":null,
+      "search_result":{
+        "urls":[
+          "https://github.com/designcomputer/mysql_mcp_server"
+        ],
+        "server_configs":[
+          {
+            "name":"MySQL MCP Server",
+            "url":"https://github.com/designcomputer/mysql_mcp_server",
+            "description":"MCP protocol server for MySQL, supporting table discovery, data reading, and safe SQL execution",
+            "server_config":"{\"mcpServers\": {\"mysql\": {\"command\": \"uv\", \"args\": [\"--directory\", \"path/to/mysql_mcp_server\", \"run\", \"mysql_mcp_server\"], \"env\": {\"MYSQL_HOST\": \"localhost\", \"MYSQL_PORT\": \"3306\", \"MYSQL_USER\": \"your_username\", \"MYSQL_PASSWORD\": \"your_password\", \"MYSQL_DATABASE\": \"your_database\"}}}}"
+          }
+        ]
+      }
+    }
+  },
+  "isError":false
 }
 ```
 </Accordion>
@@ -116,6 +132,7 @@ curl -X POST 'http://mcp.telminator.com:8888/mcp' \
 ```bash
 curl -X POST 'http://mcp.telminator.com:8888/mcp' \
   -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
   -d '{
     "jsonrpc": "2.0",
     "id": 10,
@@ -123,37 +140,56 @@ curl -X POST 'http://mcp.telminator.com:8888/mcp' \
     "params": {
       "name": "list_a2a_mcp_server",
       "arguments": {
-        "query": "email"
+        "query": "send email to John"
       }
     }
   }'
 ```
 
-### Example 2: Create a Task
+### Example 2: Search for Database Servers
 ```bash
 curl -X POST 'http://mcp.telminator.com:8888/mcp' \
   -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
   -d '{
     "jsonrpc": "2.0",
     "id": 11,
     "method": "tools/call",
     "params": {
-      "name": "create_task",
+      "name": "list_a2a_mcp_server",
       "arguments": {
-        "title": "Send weekly report",
-        "description": "Compile and send the weekly team report"
+        "query": "mysql database"
       }
     }
   }'
 ```
 
-### Example 3: Search with Multiple Keywords
+### Example 3: Search with Task-Based Query
 ```bash
 curl -X POST 'http://mcp.telminator.com:8888/mcp' \
   -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
   -d '{
     "jsonrpc": "2.0",
     "id": 12,
+    "method": "tools/call",
+    "params": {
+      "name": "list_a2a_mcp_server",
+      "arguments": {
+        "query": "need to send a mail to Ram"
+      }
+    }
+  }'
+```
+
+### Example 4: Search for Calendar/Scheduling Servers
+```bash
+curl -X POST 'http://mcp.telminator.com:8888/mcp' \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 13,
     "method": "tools/call",
     "params": {
       "name": "list_a2a_mcp_server",
@@ -166,7 +202,7 @@ curl -X POST 'http://mcp.telminator.com:8888/mcp' \
 
 ## JSON-RPC Protocol
 
-The Telminator MCP server uses JSON-RPC 2.0 protocol.
+The Telminator MCP server uses JSON-RPC 2.0 protocol with event-stream responses.
 
 ### Request Format
 ```json
@@ -182,37 +218,66 @@ The Telminator MCP server uses JSON-RPC 2.0 protocol.
 
 ### Response Format
 
+The server returns responses in Server-Sent Events (SSE) format:
+
 **Success Response:**
-```json
-{
+```
+event: message 
+data: {
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
     // Result data
-  }
+  },
+  "isError": false
 }
 ```
 
 **Error Response:**
-```json
-{
+```
+event: message
+data: {
   "jsonrpc": "2.0",
   "id": 1,
   "error": {
     "code": -32601,
     "message": "Method not found"
-  }
+  },
+  "isError": true
 }
 ```
 
-## Common Methods
+## Available Methods
 
 | Method | Description | Parameters |
 |--------|-------------|------------|
 | `tools/list` | List all available tools | None |
-| `tools/call` | Execute a specific tool | `name`, `arguments` |
-| `resources/list` | List available resources | None |
-| `prompts/list` | List available prompts | None |
+| `tools/call` | Execute a specific tool | `name` (string), `arguments` (object) |
+
+## Tool Details
+
+### list_a2a_mcp_server
+
+Searches for an agent and MCP server configurations based on any user input query.
+
+**Input Schema:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Natural language query describing the task or server type needed"
+    }
+  },
+  "required": ["query"]
+}
+```
+
+**Output:**
+- Returns agent details and relevant server URLs with configurations
+- Includes `a2a_result` (agent-to-agent results)
+- Includes `search_result` with URLs and server configurations
 
 ## Error Codes
 
@@ -228,45 +293,95 @@ The Telminator MCP server uses JSON-RPC 2.0 protocol.
 
 <AccordionGroup>
   <Accordion title="Pretty Print JSON Output">
-    Use `jq` to format JSON responses:
+    Use `jq` to format JSON responses (note: SSE format requires extracting data first):
 ```bash
-    curl -X POST 'http://mcp.telminator.com:8888/mcp' \
-      -H 'Content-Type: application/json' \
-      -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-      | jq '.'
+curl -X POST 'http://mcp.telminator.com:8888/mcp' \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc":"2.0",
+    "id":2,
+    "method":"tools/list",
+    "params":{}
+  }' | grep "^data: " | sed 's/^data: //' | jq '.'
 ```
   </Accordion>
 
   <Accordion title="Save Response to File">
     Save the response for later analysis:
 ```bash
-    curl -X POST 'http://mcp.telminator.com:8888/mcp' \
-      -H 'Content-Type: application/json' \
-      -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-      -o response.json
+curl -X POST 'http://mcp.telminator.com:8888/mcp' \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc":"2.0",
+    "id":2,
+    "method":"tools/list",
+    "params":{}
+  }' -o response.txt
 ```
   </Accordion>
 
   <Accordion title="Add Timeout">
     Set a maximum time for the request:
 ```bash
-    curl --max-time 30 \
-      -X POST 'http://mcp.telminator.com:8888/mcp' \
-      -H 'Content-Type: application/json' \
-      -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+curl --max-time 30 \
+  -X POST 'http://mcp.telminator.com:8888/mcp' \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc":"2.0",
+    "id":2,
+    "method":"tools/list",
+    "params":{}
+  }'
 ```
   </Accordion>
 
   <Accordion title="Verbose Output">
     See detailed request/response information:
 ```bash
-    curl -v \
-      -X POST 'http://mcp.telminator.com:8888/mcp' \
-      -H 'Content-Type: application/json' \
-      -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+curl -v \
+  -X POST 'http://mcp.telminator.com:8888/mcp' \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{
+    "jsonrpc":"2.0",
+    "id":2,
+    "method":"tools/list",
+    "params":{}
+  }'
+```
+  </Accordion>
+
+  <Accordion title="Always Include Accept Header">
+    The server uses Server-Sent Events format, so always include:
+```bash
+-H 'Accept: application/json, text/event-stream'
 ```
   </Accordion>
 </AccordionGroup>
+
+## Understanding the Response Structure
+
+The `list_a2a_mcp_server` tool returns a structured response containing:
+
+### Response Fields
+
+- **content**: Array of text content containing the JSON result
+- **structuredContent**: Parsed structured data with:
+  - **a2a_result**: Agent-to-agent communication results (may be null)
+  - **search_result**: Search results containing:
+    - **urls**: Array of relevant server URLs
+    - **server_configs**: Array of server configuration objects
+
+### Server Configuration Object
+
+Each server config includes:
+- **name**: Name of the MCP server
+- **url**: GitHub or repository URL
+- **description**: Description of the server's capabilities
+- **server_config**: JSON string containing the MCP server configuration
 
 ## Troubleshooting
 
@@ -274,21 +389,63 @@ The Telminator MCP server uses JSON-RPC 2.0 protocol.
   <Step title="Verify Server is Running">
     Test basic connectivity:
 ```bash
-    curl -I http://mcp.telminator.com:8888/mcp
+curl -I http://mcp.telminator.com:8888/mcp
 ```
   </Step>
   
   <Step title="Check JSON Syntax">
     Validate your JSON before sending:
 ```bash
-    echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.'
+echo '{
+  "jsonrpc":"2.0",
+  "id":1,
+  "method":"tools/list",
+  "params":{}
+}' | jq '.'
 ```
   </Step>
   
+  <Step title="Verify Headers">
+    Always include both Content-Type and Accept headers:
+    - Content-Type: application/json
+    - Accept: application/json, text/event-stream
+  </Step>
+  
   <Step title="Review Error Messages">
-    Check the error code and message in the response for debugging
+    Check the error code and message in the response for debugging. Look for `"isError": true` in the response.
   </Step>
 </Steps>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Missing Accept Header">
+    **Issue:** Response format is incorrect or incomplete.
+    
+    **Solution:** Always include the Accept header:
+```bash
+-H 'Accept: application/json, text/event-stream'
+```
+  </Accordion>
+
+  <Accordion title="Query Returns No Results">
+    **Issue:** The search query doesn't match any servers.
+    
+    **Solutions:**
+    - Try broader search terms
+    - Use task-based queries like "send email" instead of technical terms
+    - Check spelling in your query
+  </Accordion>
+
+  <Accordion title="Parsing SSE Format">
+    **Issue:** Response contains `event: message` and `data:` prefixes.
+    
+    **Solution:** This is the Server-Sent Events format. Extract the data portion:
+```bash
+grep "^data: " | sed 's/^data: //'
+```
+  </Accordion>
+</AccordionGroup>
 
 ## Next Steps
 
