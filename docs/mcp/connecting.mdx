@@ -42,33 +42,54 @@ The simplest way to interact with the standard MCP server is through cURL comman
 Discover all tools available on the server:
 ```bash
 curl -X POST 'http://mcp.telminator.com:8888/mcp' \
-  -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+-H 'Content-Type: application/json' \
+-H 'Accept: application/json, text/event-stream' \
+-d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "list_a2a_mcp_server",
+      "arguments": {
+        "query": "test"
+      }
+    }
+}'
 ```
 
 **Expected Response:**
 ```json
-{
-  "jsonrpc": "2.0",
-  "id": 2,
-  "result": {
-    "tools": [
+event: message 
+data: {
+  "jsonrpc":"2.0",
+  "id":3,
+  "result":{
+    "content":[
       {
-        "name": "list_a2a_mcp_server",
-        "description": "List available A2A MCP servers",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "query": {
-              "type": "string",
-              "description": "Search query"
-            }
-          }
-        }
+        "type":"text",
+        "text":"{\"a2a_result\":null,\"search_result\":{\"urls\":[\"https://github.com/designcomputer/mysql_mcp_server\"],\"server_configs\":[{\"name\":\"MySQL MCP Server\",\"url\":\"https://github.com/designcomputer/mysql_mcp_server\",\"description\":\"MCP protocol server for MySQL, supporting table discovery, data reading, and safe SQL execution\",\"server_config\":\"{\\\"mcpServers\\\": {\\\"mysql\\\": {\\\"command\\\": \\\"uv\\\", \\\"args\\\": [\\\"--directory\\\", \\\"path/to/mysql_mcp_server\\\", \\\"run\\\", \\\"mysql_mcp_server\\\"], \\\"env\\\": {\\\"MYSQL_HOST\\\": \\\"localhost\\\", \\\"MYSQL_PORT\\\": \\\"3306\\\", \\\"MYSQL_USER\\\": \\\"your_username\\\", \\\"MYSQL_PASSWORD\\\": \\\"your_password\\\", \\\"MYSQL_DATABASE\\\": \\\"your_database\\\"}}}}\"}]}}"
       }
-    ]
-  }
+    ],
+    "structuredContent":{
+      "a2a_result":null,
+      "search_result":{
+        "urls":[
+          "https://github.com/designcomputer/mysql_mcp_server"
+        ],
+        "server_configs":[
+          {
+            "name":"MySQL MCP Server",
+            "url":"https://github.com/designcomputer/mysql_mcp_server",
+            "description":"MCP protocol server for MySQL, supporting table discovery, data reading, and safe SQL execution",
+            "server_config":"{\"mcpServers\": {\"mysql\": {\"command\": \"uv\", \"args\": [\"--directory\", \"path/to/mysql_mcp_server\", \"run\", \"mysql_mcp_server\"], \"env\": {\"MYSQL_HOST\": \"localhost\", \"MYSQL_PORT\": \"3306\", \"MYSQL_USER\": \"your_username\", \"MYSQL_PASSWORD\": \"your_password\", \"MYSQL_DATABASE\": \"your_database\"}}}}"
+          }
+        ]
+      }
+    }
+  },
+  "isError":false
 }
+
 ```
 
 ### Call a Tool
@@ -76,32 +97,50 @@ curl -X POST 'http://mcp.telminator.com:8888/mcp' \
 Execute a specific tool with parameters:
 ```bash
 curl -X POST 'http://mcp.telminator.com:8888/mcp' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "jsonrpc":"2.0",
-    "id":3,
-    "method":"tools/call",
-    "params":{
-      "name":"list_a2a_mcp_server",
-      "arguments":{"query":"send email to John"}
-    }
-  }'
+-H 'Content-Type: application/json' \
+-H 'Accept: application/json, text/event-stream' \
+-d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list",
+    "params": {}
+}'
 ```
 
 **Expected Response:**
 ```json
-{
-  "jsonrpc": "2.0",
-  "id": 3,
-  "result": {
-    "content": [
+event: message 
+data: {
+  "jsonrpc":"2.0",
+  "id":2,
+  "result":{
+    "tools":[
       {
-        "type": "text",
-        "text": "Found 2 servers matching your query..."
+        "name":"list_a2a_mcp_server",
+        "description":"Searches for an agent and MCP server configurations based on any user input query.\nReturns the selected agent's details and relevant server URLs with their configurations.",
+        "inputSchema":{
+          "properties":{
+            "query":{
+              "type":"string"
+            }
+          },
+          "required":["query"],
+          "type":"object"
+        },
+        "outputSchema":{
+          "additionalProperties":true,
+          "type":"object"
+        },
+        "_meta":{
+          "_fastmcp":{
+            "tags":[]
+          }
+        }
       }
     ]
   }
 }
+
 ```
 
 ## Using Python (FastMCP)
