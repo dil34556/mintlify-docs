@@ -15,7 +15,7 @@ Learn how to interact with Telminator's MCP server using cURL commands.
 
 ## Server Endpoint
 ```
-https://mcp.telminator.com/
+http://mcp.telminator.com:8888/mcp
 ```
 
 ## Basic Operations
@@ -24,7 +24,7 @@ https://mcp.telminator.com/
 
 Discover all tools available on the MCP server:
 ```bash
-curl -X POST 'https://mcp.telminator.com/' \
+curl -X POST 'http://mcp.telminator.com:8888/mcp' \
   -H 'Content-Type: application/json' \
   -d '{
     "jsonrpc": "2.0",
@@ -77,7 +77,7 @@ curl -X POST 'https://mcp.telminator.com/' \
 
 Execute a specific tool with parameters:
 ```bash
-curl -X POST 'https://mcp.telminator.com/' \
+curl -X POST 'http://mcp.telminator.com:8888/mcp' \
   -H 'Content-Type: application/json' \
   -d '{
     "jsonrpc": "2.0",
@@ -114,7 +114,7 @@ curl -X POST 'https://mcp.telminator.com/' \
 
 ### Example 1: Search for Email Servers
 ```bash
-curl -X POST 'https://mcp.telminator.com/' \
+curl -X POST 'http://mcp.telminator.com:8888/mcp' \
   -H 'Content-Type: application/json' \
   -d '{
     "jsonrpc": "2.0",
@@ -131,7 +131,7 @@ curl -X POST 'https://mcp.telminator.com/' \
 
 ### Example 2: Create a Task
 ```bash
-curl -X POST 'https://mcp.telminator.com/' \
+curl -X POST 'http://mcp.telminator.com:8888/mcp' \
   -H 'Content-Type: application/json' \
   -d '{
     "jsonrpc": "2.0",
@@ -149,7 +149,7 @@ curl -X POST 'https://mcp.telminator.com/' \
 
 ### Example 3: Search with Multiple Keywords
 ```bash
-curl -X POST 'https://mcp.telminator.com/' \
+curl -X POST 'http://mcp.telminator.com:8888/mcp' \
   -H 'Content-Type: application/json' \
   -d '{
     "jsonrpc": "2.0",
@@ -230,7 +230,7 @@ The Telminator MCP server uses JSON-RPC 2.0 protocol.
   <Accordion title="Pretty Print JSON Output">
     Use `jq` to format JSON responses:
 ```bash
-    curl -X POST 'https://mcp.telminator.com/' \
+    curl -X POST 'http://mcp.telminator.com:8888/mcp' \
       -H 'Content-Type: application/json' \
       -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
       | jq '.'
@@ -240,7 +240,7 @@ The Telminator MCP server uses JSON-RPC 2.0 protocol.
   <Accordion title="Save Response to File">
     Save the response for later analysis:
 ```bash
-    curl -X POST 'https://mcp.telminator.com/' \
+    curl -X POST 'http://mcp.telminator.com:8888/mcp' \
       -H 'Content-Type: application/json' \
       -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
       -o response.json
@@ -251,7 +251,7 @@ The Telminator MCP server uses JSON-RPC 2.0 protocol.
     Set a maximum time for the request:
 ```bash
     curl --max-time 30 \
-      -X POST 'https://mcp.telminator.com/' \
+      -X POST 'http://mcp.telminator.com:8888/mcp' \
       -H 'Content-Type: application/json' \
       -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 ```
@@ -261,7 +261,7 @@ The Telminator MCP server uses JSON-RPC 2.0 protocol.
     See detailed request/response information:
 ```bash
     curl -v \
-      -X POST 'https://mcp.telminator.com/' \
+      -X POST 'http://mcp.telminator.com:8888/mcp' \
       -H 'Content-Type: application/json' \
       -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 ```
@@ -274,7 +274,7 @@ The Telminator MCP server uses JSON-RPC 2.0 protocol.
   <Step title="Verify Server is Running">
     Test basic connectivity:
 ```bash
-    curl -I https://mcp.telminator.com/
+    curl -I http://mcp.telminator.com:8888/mcp
 ```
   </Step>
   

@@ -10,7 +10,7 @@ Learn how to integrate with Telminator agents using Python. No complex installat
 ## Prerequisites
 
 - Python 3.12 or higher
-- A Telminator account at [app.telminator.com](https://app.telminator.com/)
+- A Telminator account at [Telminator Dashboard](https://app.telminator.com)
 - Your API key from the [Access Tokens page](https://app.telminator.com/#api-keys)
 
 <Note>
@@ -21,7 +21,7 @@ The A2A client libraries are already available in your Python environment. You d
 
 ### Step 1: Get Your API Key
 
-1. Go to [Telminator Dashboard](https://app.telminator.com/)
+1. Go to Telminator Dashboard
 2. Navigate to **Access Tokens** section
 3. Click **"Create New Token"**
 4. Copy your API key (it looks like: `tel*********************`)
@@ -222,8 +222,8 @@ async def main(url: str, bearer_token: str, session: int = 0, history: bool = Fa
 
 if __name__ == "__main__":
     # Configuration
-    AGENT_URL = os.getenv("AGENT_URL", "https://agent.telminator.com:10001/")
-    BEARER_TOKEN = os.getenv("A2A_BEARER_TOKEN")
+    AGENT_URL = os.getenv("AGENT_URL", "http://agent.telminator.com:10001/")
+    BEARER_TOKEN = os.getenv("A2A_BEARER_TOKEN","BEARER_TOKEN")
     
     if not BEARER_TOKEN:
         print("FATAL: BEARER_TOKEN not found.")
@@ -234,7 +234,7 @@ if __name__ == "__main__":
         exit(1)
     
     # Run the client
-    asyncio.run(main(url=AGENT_URL, bearer_token=BEARER_TOKEN))
+    asyncio.run(main(url=AGENT_URL, bearer_token="BEARER_TOKEN"))
 ```
 
 ### Step 3: Set Your API Key
@@ -259,7 +259,7 @@ python agent_client.py
 When you run the script, you'll see output like this:
 ```
 Using headers: {'Telmini-API-Key': 'tel*********************', 'Authorization': 'Bearer tel*********************'}
-WARN: Agent card advertises local URL 'http://0.0.0.0:10002/'. Patching to 'https://agent.telminator.com:10001/' for remote access.
+WARN: Agent card advertises local URL 'http://0.0.0.0:10002/'. Patching to 'http://agent.telminator.com:10001/' for remote access.
 ======= Agent Card ========
 {
   "capabilities": {
@@ -290,7 +290,7 @@ WARN: Agent card advertises local URL 'http://0.0.0.0:10002/'. Patching to 'http
       "tags": ["currency conversion", "currency exchange"]
     }
   ],
-  "url": "https://agent.telminator.com:10001/",
+  "url": "http://agent.telminator.com:10001/",
   "version": "1.0.0"
 }
 ========= starting a new task ========
@@ -355,7 +355,7 @@ You can customize the client behavior by modifying these parameters in the `main
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `url` | string | Agent URL | `https://agent.telminator.com:10001/` |
+| `url` | string | Agent URL | `http://agent.telminator.com:10001/` |
 | `bearer_token` | string | Your API key | From environment |
 | `session` | int | Session ID for context | `0` (auto-generate) |
 | `history` | bool | Show task history | `False` |
@@ -367,7 +367,7 @@ You can customize the client behavior by modifying these parameters in the `main
 
 Change the `AGENT_URL` to connect to a different agent:
 ```python
-AGENT_URL = "https://your-custom-agent.telminator.com/"
+AGENT_URL = "http://your-custom-agent.telminator.com/"
 ```
 
 ### Setting Up Multiple Agents
@@ -376,9 +376,9 @@ Create a configuration file:
 ```python
 # agents_config.py
 AGENTS = {
-    "currency": "https://agent.telminator.com:10001/",
-    "weather": "https://weather-agent.telminator.com/",
-    "custom": "https://your-agent.telminator.com/"
+    "currency": "http://agent.telminator.com:10001/",
+    "weather": "http://weather-agent.telminator.com/",
+    "custom": "http://your-agent.telminator.com/"
 }
 
 # Use in your script
@@ -410,7 +410,7 @@ asyncio.run(main(url=selected_agent, bearer_token=BEARER_TOKEN))
   <Accordion title="Authentication failed">
     - Verify your API key is correct
     - Check if the key has expired
-    - Generate a new key from [app.telminator.com](https://app.telminator.com/#api-keys)
+    - Generate a new key from Telminator Dashboard
   </Accordion>
 
   <Accordion title="DeprecationWarning: A2AClient">
@@ -431,5 +431,5 @@ asyncio.run(main(url=selected_agent, bearer_token=BEARER_TOKEN))
 </CardGroup>
 
 <Note>
-**Need Help?** Visit the [Telminator Dashboard](https://app.telminator.com/) or check our GitHub repository for examples and support.
+**Need Help?** Visit the Telminator Dashboard or check our GitHub repository for examples and support.
 </Note>

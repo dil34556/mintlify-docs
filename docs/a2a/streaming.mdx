@@ -211,7 +211,7 @@ from a2a.client import A2ACardResolver, A2AClient
 from a2a.types import *
 
 async def main():
-    AGENT_URL = os.getenv("AGENT_URL", "https://agent.telminator.com:10001/")
+    AGENT_URL = os.getenv("AGENT_URL", "http://agent.telminator.com:10001/")
     BEARER_TOKEN = os.getenv("A2A_BEARER_TOKEN")
     
     headers = {

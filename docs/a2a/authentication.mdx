@@ -63,7 +63,7 @@ pip install python-dotenv
 Create a `.env` file:
 ```bash
 A2A_BEARER_TOKEN=your_token_here
-AGENT_URL=https://agent.telminator.com:10001/
+AGENT_URL=http://agent.telminator.com:10001/
 ```
 
 Load in your code:
@@ -140,17 +140,3 @@ except HTTPStatusError as e:
 except Exception as e:
     print(f"Authentication error: {e}")
 ```
-
-## Security Best Practices
-
-<Warning>
-**Never hardcode tokens:** Always use environment variables or secure vaults
-</Warning>
-
-- ✅ Store tokens in environment variables
-- ✅ Use `.gitignore` to exclude `.env` files
-- ✅ Rotate API keys regularly
-- ✅ Use different keys for development and production
-- ❌ Never commit tokens to version control
-- ❌ Don't share tokens in logs or error messages
-- ❌ Avoid hardcoding tokens in source code
